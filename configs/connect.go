@@ -3,6 +3,8 @@ package configs
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -10,14 +12,15 @@ import (
 )
 
 func ConnectDB() *mongo.Client {
-	ctx := context.Background();
-
+	// create context to wait for 10 seconds
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	clientOptions := options.Client().ApplyURI(EnvDatabaseURI()).SetServerAPIOptions(serverAPI);
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err!=nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	// defer disconnect so that connection gets closed
 	defer func(){
@@ -27,7 +30,7 @@ func ConnectDB() *mongo.Client {
 	}()
 
 	if err:= client.Ping(ctx, readpref.Primary()); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	fmt.Println("Connected to db")
